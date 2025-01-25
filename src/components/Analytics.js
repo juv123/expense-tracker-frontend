@@ -102,7 +102,7 @@ const Analytics = () => {
   };
 
   return (
-    <div className="bg-white shadow-lg rounded-lg p-6 m-5">
+    <div className="bg-white shadow-lg rounded-lg p-6 m-4">
       <h3 className="text-blue-600 text-lg font-semibold mb-7 hover:text-blue-800 mt-3">
         Expense Breakdown by Category
       </h3>

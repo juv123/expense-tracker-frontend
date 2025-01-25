@@ -18,6 +18,7 @@ function App() {
        
         <div className="flex-grow p-6 bg-gray-100 overflow-y-auto">
           <Routes>
+            <Route path="/" element={<Expenses />} />
             <Route path="/Expenses" element={<Expenses />} />
             <Route path="/Analytics" element={<Analytics />} />
             <Route path="/AddExpense" element={<AddExpense />} />
