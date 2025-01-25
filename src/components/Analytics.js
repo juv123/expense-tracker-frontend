@@ -1,17 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Doughnut } from 'react-chartjs-2'; 
+import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import axios from 'axios';
 import { CATEGORIES_API, EXPENSES_VIEW_API } from '../config/constants';
-import { useNavigate } from 'react-router-dom';
-
+import { motion } from 'framer-motion';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const Analytics = () => {
   const [categories, setCategories] = useState([]);
   const [expenses, setExpenses] = useState([]);
-  const navigate=useNavigate();
   const [chartData, setChartData] = useState({
     labels: [],
     datasets: [
@@ -24,12 +22,8 @@ const Analytics = () => {
       },
     ],
   });
-  const goBackToPreviousPage=()=>{
-    navigate(-1)
- }
 
   useEffect(() => {
-  
     const fetchData = async () => {
       try {
         const categoriesResponse = await axios.get(CATEGORIES_API);
@@ -46,15 +40,11 @@ const Analytics = () => {
     fetchData();
   }, []);
 
-
   const makeChartData = (expenses, categories) => {
-   
-    let categoryExpenses = categories.map((category) => {
-      return {
-        category_name: category.category_name,
-        amount: 0,
-      };
-    });
+    let categoryExpenses = categories.map((category) => ({
+      category_name: category.category_name,
+      amount: 0,
+    }));
 
     expenses.forEach((expense) => {
       const categoryIndex = categoryExpenses.findIndex(
@@ -65,7 +55,6 @@ const Analytics = () => {
       }
     });
 
-    
     const labels = categoryExpenses.map((item) => item.category_name);
     const data = categoryExpenses.map((item) => item.amount);
 
@@ -82,7 +71,6 @@ const Analytics = () => {
     }));
   };
 
- 
   const getRandomColor = () => {
     const letters = '0123456789ABCDEF';
     let color = '#';
@@ -92,16 +80,42 @@ const Analytics = () => {
     return color;
   };
 
+  // Custom tooltip configuration to show amount in INR
+  const options = {
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: (tooltipItem) => {
+            const categoryName = tooltipItem.label;
+            const expenseAmount = tooltipItem.raw;
+            const formattedAmount = new Intl.NumberFormat('en-IN', {
+              style: 'currency',
+              currency: 'INR',
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }).format(expenseAmount);
+            return `${categoryName}: ${formattedAmount}`;
+          },
+        },
+      },
+    },
+  };
+
   return (
-    <div className="bg-white shadow-lg rounded-lg p-6 m-4">
-      <button className="btnBack" onClick={goBackToPreviousPage}>{"<< Back"}</button>
-      <h3 className="text-gray-800 text-lg font-semibold mb-4">Expense Breakdown by Category</h3>
-      <div className="w-3/4 mx-auto my-6">
-        <Doughnut data={chartData} />
-      </div>
-      
+    <div className="bg-white shadow-lg rounded-lg p-6 m-5">
+      <h3 className="text-blue-600 text-lg font-semibold mb-7 hover:text-blue-800 mt-3">
+        Expense Breakdown by Category
+      </h3>
+      <motion.div
+        className="w-3/4 mx-auto"
+        whileHover={{ scale: 1.05 }}
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        <Doughnut data={chartData} options={options} />
+      </motion.div>
     </div>
-    
   );
 };
 

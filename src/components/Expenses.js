@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { EXPENSE_BETWEEN_DATES_API, EXPENSES_VIEW_API, CATEGORIES_API } from '../config/constants';
 import axios from 'axios';
 
@@ -8,7 +8,7 @@ const Expenses = () => {
   const [filteredExpenses, setFilteredExpenses] = useState([]); // Initialize with an empty array
   const [categories, setCategories] = useState([]); // For storing categories
   const [filters, setFilters] = useState({ from: '', to: '', category_id: '' });
-  const navigate=useNavigate();
+  
   // Fetch all expenses and categories on component mount
   useEffect(() => {
     // Fetch expenses
@@ -28,9 +28,7 @@ const Expenses = () => {
       })
       .catch((error) => console.error('Error fetching categories:', error));
   }, []);
-  const goBackToPreviousPage=()=>{
-    navigate(-1)
- }
+  
  
   // Function to fetch filtered expenses based on date range and category
   const fetchExpensesByFilter = async () => {
@@ -69,14 +67,14 @@ const Expenses = () => {
             <li>
               <Link
                 to="/AddExpense"
-                className="block py-3 px-4 mb-2 rounded-lg hover:bg-green-600 transition duration-200 ease-in-out"
+                className="block py-3 px-4 mb-2 rounded-lg bg-green-300 hover:bg-green-600 transition duration-200 ease-in-out"
               >
                 Add Expense
               </Link>
             </li>
           </ul>
         </div>
-        <button className="btnBack" onClick={goBackToPreviousPage}>{"<< Back"}</button>
+       
       </div>
 
       <div className="bg-white shadow-lg rounded-lg overflow-x-auto p-6 m-4">
