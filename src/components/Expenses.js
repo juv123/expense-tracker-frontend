@@ -8,6 +8,8 @@ const Expenses = () => {
   const [filteredExpenses, setFilteredExpenses] = useState([]); // Initialize with an empty array
   const [categories, setCategories] = useState([]); // For storing categories
   const [filters, setFilters] = useState({ from: '', to: '', category_id: '' });
+  const[editable,setEditable]=useState(null);
+  const[updatedExpense,setUpdatedExpense]=useState([]);
   
   // Fetch all expenses and categories on component mount
   useEffect(() => {
@@ -33,16 +35,16 @@ const Expenses = () => {
   // Function to fetch filtered expenses based on date range and category
   const fetchExpensesByFilter = async () => {
     try {
-      const response = await axios.get(EXPENSE_BETWEEN_DATES_API, {
-        params: {
+      const response = await axios.post(EXPENSE_BETWEEN_DATES_API, 
+        {
           from: filters.from,
           to: filters.to,
           category_id: filters.category_id,
         },
-      });
-      setFilteredExpenses(response.data); // Update filtered results
+      );
+      setFilteredExpenses(response?.data);
     } catch (error) {
-      console.error('Error fetching filtered expenses:', error);
+      console.error("Error fetching filtered expenses:", error);
     }
   };
 
@@ -57,7 +59,40 @@ const Expenses = () => {
     e.preventDefault(); // Prevent page refresh
     fetchExpensesByFilter(); // Fetch filtered expenses
   };
+   const editExpense=(expense)=>{
+    setEditable(expense.id);//sets expense id of expense to be edit in editable var
+    setUpdatedExpense({...expense});
+   }
+   const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setUpdatedExpense(prev => ({ ...prev, [name]: value }));
+  };
 
+  // Save Edited Expense
+  const saveExpense = async () => {
+    try {
+      await axios.put(`${EXPENSES_VIEW_API}/${updatedExpense.id}/edit`, updatedExpense);
+      setFilteredExpenses(filteredExpenses.map(exp => (exp.id === updatedExpense.id ? updatedExpense : exp)));
+      setEditable(null);
+    } catch (error) {
+      console.error('Error updating expense:', error);
+    }
+  };
+  const cancelEdit = () => {
+    setEditable(null);
+  };
+
+  // Delete Expense
+  const deleteExpense = async (expenseId) => {
+    if (window.confirm('Are you sure you want to remove this expense?')) {
+      try {
+        await axios.delete(`${EXPENSES_VIEW_API}/${expenseId}/delete`);
+        setFilteredExpenses(filteredExpenses.filter(exp => exp.id !== expenseId));
+      } catch (error) {
+        console.error('Error deleting expense:', error);
+      }
+    }
+  };
   return (
     <>
       <div className="bg-white shadow-md rounded-lg p-6 m-4">
@@ -115,7 +150,7 @@ const Expenses = () => {
                 name="category_id"
                 value={filters.category_id}
                 onChange={handleChange}
-                className="w-full h-9 px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-teal-50 text-gray-700"
+                className="w-full h-10 px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-teal-50 text-gray-700"
               >
                 <option value="">Select a category</option>
                 {categories.map((category) => (
@@ -145,19 +180,41 @@ const Expenses = () => {
               <th className="py-3 px-6 text-left">Description</th>
               <th className="py-3 px-6 text-left">Amount</th>
               <th className="py-3 px-6 text-left">Date</th>
+              <th className="py-3 px-6 text-left">Actions</th>
             </tr>
           </thead>
-          <tbody className="text-gray-600 text-sm font-light">
+          <tbody className="text-gray-800 text-center italic">
             {filteredExpenses.map((expense, index) => (
               <tr
                 className="border-b border-gray-200 hover:bg-gray-100"
                 key={expense.id}
               >
                 <td className="py-3 px-6 text-left">{index + 1}</td>
-                <td className="py-3 px-6 text-left">{expense?.category?.category_name}</td>
-                <td className="py-3 px-6 text-left">{expense.description}</td>
-                <td className="py-3 px-6 text-left">{expense.amount}</td>
-                <td className="py-3 px-6 text-left">{expense.date_of_expense}</td>
+                <td className="py-3 px-6 text-left"> {editable === expense.id ? (
+                    <input type="text" name="category" value={updatedExpense.category.category_name || ''} onChange={handleEditChange} />
+                  ) : (expense.category ? expense.category.category_name : 'N/A')}</td>
+                <td className="py-3 px-6 text-left"> {editable === expense.id ? (
+                    <input type="text" name="description" value={updatedExpense.description|| ''} onChange={handleEditChange} />
+                  ) : (expense?.description)}</td>
+                <td className="py-3 px-6 text-left"> {editable === expense.id ? (
+                    <input type="number" name="amount" value={updatedExpense.amount || ''} onChange={handleEditChange} />
+                  ) : (expense?.amount)}</td>
+                <td className="py-3 px-6 text-left">{editable === expense.id ? (
+                    <input type="date" name="date_of_expense" value={updatedExpense?.date_of_expense || ''} onChange={handleEditChange} />
+                  ) : (expense?.date_of_expense)}</td>
+                <td className="py-3 px-6">
+                  {editable === expense.id ? (
+                    <>
+                      <button onClick={saveExpense}>Save</button>
+                      <button onClick={cancelEdit}>Cancel</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => editExpense(expense)}>Edit | </button>
+                      <button onClick={() => deleteExpense(expense.id)}>Delete</button>
+                    </>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
