@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { EXPENSE_BETWEEN_DATES_API, EXPENSES_VIEW_API, CATEGORIES_API } from '../config/constants';
 import axios from 'axios';
-
+import { ToastContainer, toast } from 'react-toastify';
 const Expenses = () => {
   const [expenses, setExpenses] = useState([]); // Initialize with an empty array
   const [filteredExpenses, setFilteredExpenses] = useState([]); // Initialize with an empty array
@@ -83,16 +83,61 @@ const Expenses = () => {
   };
 
   // Delete Expense
-  const deleteExpense = async (expenseId) => {
+  const deleteExpense = async (expense) => {
     if (window.confirm('Are you sure you want to remove this expense?')) {
       try {
-        await axios.delete(`${EXPENSES_VIEW_API}/${expenseId}/delete`);
-        setFilteredExpenses(filteredExpenses.filter(exp => exp.id !== expenseId));
+        await axios.delete(`${EXPENSES_VIEW_API}/${expense.id}/delete`);
+        setFilteredExpenses(filteredExpenses.filter(exp => exp.id !== expense.id));
+           toast.success(
+                <>
+                  <span className='text-red-500'>{expense.description}</span>&nbsp;&nbsp;has been removed.
+                  <br />
+                </>,
+                {
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                }
+              );
       } catch (error) {
+         toast.error('Something went wrong. Please fill all the details and try again!', {
+                  position: "bottom-right",
+                  autoClose: 5000,
+                  hideProgressBar: false,
+                  closeOnClick: true,
+                  pauseOnHover: true,
+                  draggable: true,
+                  progress: undefined,
+                });
         console.error('Error deleting expense:', error);
       }
     }
   };
+  
+  // Define a color array to be used for categories
+  const colors = [
+    'bg-red-100', 'bg-blue-100', 'bg-green-100', 'bg-yellow-100',
+    'bg-orange-400', 'bg-violet-400', 'bg-green-400', 'bg-indigo-400'
+  ];
+
+  // Cache colors for each category to ensure they are consistent
+  const categoryColors = {};
+
+  // Function to get a unique color for each category dynamically
+  const getCategoryColor = (category) => {
+    if (!categoryColors[category]) {
+      // Assign a random color to the category
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      categoryColors[category] = randomColor;
+    }
+    return categoryColors[category];
+  };
+
+
+  const totalAmount = filteredExpenses.reduce((total, expense) => total + expense.amount, 0)
   return (
     <>
       <div className="bg-white shadow-md rounded-lg p-6 m-4">
@@ -116,6 +161,7 @@ const Expenses = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
+            <ToastContainer />
               <label className="block text-lg font-medium" htmlFor="from">
                 From
               </label>
@@ -186,7 +232,7 @@ const Expenses = () => {
           <tbody className="text-gray-800 text-center italic">
             {filteredExpenses.map((expense, index) => (
               <tr
-                className="border-b border-gray-200 hover:bg-gray-100"
+                className={`border-b border-gray-200 hover:bg-gray-100 ${getCategoryColor(expense.category.id)}` }
                 key={expense.id}
               >
                 <td className="py-3 px-6 text-left">{index + 1}</td>
@@ -211,13 +257,21 @@ const Expenses = () => {
                   ) : (
                     <>
                       <button onClick={() => editExpense(expense)}>Edit | </button>
-                      <button onClick={() => deleteExpense(expense.id)}>Delete</button>
+                      <button onClick={() => deleteExpense(expense)}>Delete</button>
                     </>
                   )}
                 </td>
               </tr>
             ))}
           </tbody>
+          <tfoot>
+          <tr>
+            <td></td>
+            <td></td>
+            <td className="px-4 py-2 border font-bold text-blue-500">Total Amount</td>
+            <td className="px-4 py-2 border font-bold text-red-500 hover:text-red-800">Rs.{totalAmount}</td>
+          </tr>
+        </tfoot>
         </table>
      
       </div>
